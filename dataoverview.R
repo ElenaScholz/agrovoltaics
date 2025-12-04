@@ -1,9 +1,10 @@
-library(dplyr)
-source("utils/dataManipulation.R")
+
 
 renv::activate()
 # library(dplyr)
-DATA_ROOT <-"C:/Users/elena/Documents/RProjects/agrovoltaics/agrovoltaics/logger_data/"
+library(dplyr)
+source("utils/dataManipulation.R")
+DATA_ROOT <-"C:/Users/elena/Documents/RProjects/agrovoltaics/logger_data/"
 
 
 # renaming
@@ -138,10 +139,10 @@ names(renamed_data) <- names(raw_data)
 # remove columns we dont need
 # Define which columns to drop for each logger type
 drop_columns <- list(
-  meteo = c("battery_voltage", "battery_status", "battery_temperature", "error_code", "Logger_ID"),
-  teplota = c("battery_voltage", "solar_panel_voltage", "battery_status", "sensor_error",
+  meteo = c("battery_voltage", "battery_status", "battery_temperature", "error_code", "reserved0", "reserved1", "reserved2","timestamp", "Logger_ID", "signal_strength_rssi"),
+  teplota_vzduch = c( "battery_voltage" ,  "solar_panel_voltage", "battery_status", "sensor_error",
               "signal_strength_rssi", "reserved0", "reserved1", "reserved2", "Logger_ID"),
-  zemi = c("battery_voltage", "solar_panel_voltage", "battery_current", "battery_energy",
+  teploty_vlhkosti_vZemi = c("battery_voltage", "solar_panel_voltage", "battery_current", "battery_energy",
            "battery_temperature", "reserved0", "reserved1", "reserved2", "Logger_ID")
 )
 
@@ -151,7 +152,7 @@ names(renamed_data) <- sub("\\.csv$", "", names(renamed_data))
 # Apply mutate_dates and drop columns
 cleaned_data <- lapply(names(renamed_data), function(name) {
   df <- renamed_data[[name]]
-  
+
   df_date <- mutate_dates(df, "timestamp", "%Y-%m-%d %H:%M:%S")
   
   # Drop columns if defined
@@ -163,8 +164,28 @@ cleaned_data <- lapply(names(renamed_data), function(name) {
 })
 names(cleaned_data) <- sub("\\.csv$", "", names(renamed_data))
 
+# convert all characters to numbers
+library(dplyr)
+
+# Define columns you want to convert
+meteo <- c(
+  "bme_temperature", "bme_pressure", "bme_altitude",
+  "si7021_temperature", "si7021_humidity", "uv_intensity",
+  "wind_speed", "wind_direction_angle", "sound_intensity_db",
+  "precipitation_day"
+)
+
+
+cleaned_data$meteo <- cleaned_data$meteo %>%
+  mutate(across(all_of(meteo), ~ as.numeric(gsub(",", ".", .))))
+
+
+# 
+
+
+
 # Define output folder
-output_folder <- "C:/Users/elena/Documents/RProjects/agrovoltaics/agrovoltaics/cleaned_data/"
+output_folder <- "cleaned_data"
 
 # Create folder if it doesn't exist
 if (!dir.exists(output_folder)) dir.create(output_folder, recursive = TRUE)

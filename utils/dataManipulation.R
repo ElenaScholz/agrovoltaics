@@ -1,3 +1,24 @@
+mutate_dates <- function(df, datetime_column = "timestamp", time_format = "%Y-%m-%d %H:%M:%S") {
+  
+  mutated_df <- df %>%
+    dplyr::mutate(
+      !!rlang::sym(datetime_column) := as.POSIXct(
+        as.character(!!rlang::sym(datetime_column)), 
+        format = time_format
+      ),
+      Date   = as.Date(!!rlang::sym(datetime_column)),
+      Julian = lubridate::yday(!!rlang::sym(datetime_column)),
+      Month  = factor(month.name[lubridate::month(!!rlang::sym(datetime_column))], levels = month.name),
+      Year   = lubridate::year(!!rlang::sym(datetime_column)),
+      Hour   = lubridate::hour(!!rlang::sym(datetime_column)),
+      Minute = lubridate::minute(!!rlang::sym(datetime_column)),
+      Second = lubridate::second(!!rlang::sym(datetime_column))
+    )
+  
+  return(mutated_df)
+}
+
+
 #' Aggregate Data
 #'
 #' Perform data aggregation by Day, Month, Season, or Year based on a specified aggregation column.
