@@ -1,0 +1,112 @@
+---
+title: "Time Lag Analysis between Measurements"
+author: "Your Name"
+date: "`r Sys.Date()`"
+output: html_notebook
+---
+
+## Setup
+
+Clear environment and load required packages:
+```{r setup, message=FALSE, warning=FALSE}
+
+#renv::activate()
+source("../utils/dataManipulation.R")
+library(dplyr)
+library(ggplot2)
+```
+
+## Read in Data
+
+Load data from the cleaned data directory:
+```{r read-data}
+DATA_PATH <- "../cleaned_data/"
+data <- FieldAnalyzeR::read_data(DATA_PATH, add_ID_from_filename = FALSE)
+names(data) <- sub("\\.csv$", "", names(data))
+
+# Display available datasets
+cat("Available datasets:\n")
+names(data)
+```
+
+## Define Time Difference Function
+
+Function to calculate time intervals between consecutive measurements:
+```{r time-difference-function}
+timedifference_btw_measurements <- function(df, time_column) {
+  df <- df %>% 
+    mutate(
+      {{ time_column }} := as.POSIXct({{ time_column }},
+                                      format = "%Y-%m-%d %H:%M:%S",
+                                      tz = "UTC")
+    ) %>%
+    arrange({{ time_column }}) %>%
+    mutate(
+      diff_seconds = as.numeric({{ time_column }} - lag({{ time_column }})),
+      diff_minutes = diff_seconds / 60
+    )
+  
+  # Output statistics
+  cat(paste0("Mean time interval in seconds: ", 
+             round(mean(df$diff_seconds, na.rm = TRUE), 2), "\n"))
+  cat(paste0("Median time interval in seconds: ", 
+             round(median(df$diff_seconds, na.rm = TRUE), 2), "\n"))
+  cat(paste0("Standard deviation time interval in seconds: ", 
+             round(sd(df$diff_seconds, na.rm = TRUE), 2), "\n"))
+  cat(paste0("Minimum time interval in seconds: ",
+             round(min(df$diff_seconds, na.rm = TRUE), 2), "\n"))
+  cat(paste0("Maximum time interval in seconds: ",
+             round(max(df$diff_seconds, na.rm = TRUE), 2), "\n"))
+  
+  return(df)
+}
+```
+
+## Calculate Time Lags
+
+Calculate time differences for each dataset:
+```{r calculate-time-lags}
+# Meteo data
+cat("=== Meteo Data ===\n")
+meteo_timelag <- timedifference_btw_measurements(data$meteo, timestamp)
+
+cat("\n=== Temperature Air Data ===\n")
+temperature_timelag <- timedifference_btw_measurements(data$teplota_vzduch, timestamp)
+
+cat("\n=== Soil Temperature/Moisture Data ===\n")
+soil_timelag <- timedifference_btw_measurements(data$teploty_vlhkosti_vZemi, timestamp)
+
+cat("\n=== Lawn Data ===\n")
+lawn_timelag <- timedifference_btw_measurements(data$travnik, timestamp)
+```
+
+## Visualizations
+
+### Histogram of Time Differences
+
+Distribution of time lags in the meteo dataset:
+```{r histogram, fig.width=8, fig.height=5}
+ggplot(meteo_timelag, aes(x = diff_minutes)) +
+  geom_histogram(bins = 50, fill = "steelblue", color = "black") +
+  scale_x_log10() +
+  labs(title = "Distribution of Time Lags (Meteo Data)",
+       x = "Time Difference (minutes, log scale)",
+       y = "Count") +
+  theme_minimal()
+```
+
+### Boxplot for Outlier Detection
+
+Identify outliers in time measurements:
+```{r boxplot, fig.width=6, fig.height=5}
+ggplot(meteo_timelag, aes(y = diff_minutes)) +
+  geom_boxplot(fill = "lightblue") +
+  scale_y_log10() +
+  labs(title = "Time Lag Outliers (Meteo Data)",
+       y = "Time Difference (minutes, log scale)") +
+  theme_minimal()
+```
+
+## Summary
+
+This notebook analyzes the time intervals between consecutive measurements across multiple datasets to identify measurement frequency patterns and potential data quality issues.

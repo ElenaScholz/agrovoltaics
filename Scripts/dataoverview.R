@@ -1,5 +1,3 @@
-
-
 renv::activate()
 # library(dplyr)
 library(dplyr)
@@ -7,8 +5,16 @@ source("utils/dataManipulation.R")
 DATA_ROOT <-"C:/Users/elena/Documents/RProjects/agrovoltaics/logger_data/"
 
 
-# renaming
-raw_data <- FieldAnalyzeR::read_data(DATA_ROOT, csv_sep = ";")
+#'#################
+#' READ IN DATA   #
+#'#################
+raw_data <- FieldAnalyzeR::read_data(DATA_ROOT, csv_sep = ";", add_ID_from_filename = FALSE )
+
+
+#'####################
+#' RENAMLE COLUMNS   #
+#'####################
+#'Meteo Station
 rename_meteo <- c(
   id                   = "id",
   station_name         = "name",
@@ -30,12 +36,13 @@ rename_meteo <- c(
   lightning_distance   = "lightning_dist",
   error_code           = "kod_chyby",
   signal_strength_rssi = "RSSI",
-  reserved0            = "rezerva0",
-  reserved1            = "rezerva1",
-  reserved2            = "rezerva2",
+  reserve0            = "rezerva0",
+  reserve1            = "rezerva1",
+  reserve2            = "rezerva2",
   timestamp            = "reading_time"
 )
 
+#' Air Temperature
 rename_teplota <- c(
   id                   = "id",
   station_name         = "name",
@@ -51,12 +58,13 @@ rename_teplota <- c(
   air_temperature_4    = "stm_1_temp_4",
   air_temperature_5    = "stm_1_temp_5",
   air_temperature_6    = "stm_1_temp_6",
-  reserved0            = "rezerva0",
-  reserved1            = "rezerva1",
-  reserved2            = "rezerva2",
+  reserve0            = "rezerva0",
+  reserve1            = "rezerva1",
+  reserve2            = "rezerva2",
   timestamp            = "reading_time"
 )
 
+#' Soil Profile Sensor
 rename_soil <- c(
   id                   = "id",
   station_name         = "name",
@@ -108,13 +116,52 @@ rename_soil <- c(
   soil_salinity_4      = "salin4",
   soil_TDS_4           = "TDS4",
   
-  reserved0            = "rezerva0",
-  reserved1            = "rezerva1",
-  reserved2            = "rezerva2",
+  reserve0            = "rezerva0",
+  reserve1            = "rezerva1",
+  reserve2            = "rezerva2",
   timestamp            = "reading_time"
 )
 
-rename_travnik <- c(timestamp = "X2025.11.29.00.04.11")
+#' Lawn Sensor
+#' Here the Column names are stored in line 191
+travnik_colnames <- as.character(raw_data$travnik.csv[190,])
+colnames(raw_data$travnik.csv) <- travnik_colnames
+raw_data$travnik.csv <- raw_data$travnik.csv[-190,]
+
+rename_travnik <- c(
+  id = "id",
+  station_name = "name",
+  battery_voltage = "Ubat",
+  solar_panel_voltage = "Upanel",
+  battery_current = "Cbat",
+  temperature = "temp",
+  humidity = "hum",
+  
+  
+  nitrogen = "Nko",
+  phosphorus = "Pko",
+  potassium = "Kko",
+  
+  soil_conductivity = "vodivost",
+  pH = "pH",
+  salinity = "salin",
+  TDS = "TDS",       # total dissolved solids  
+  error_code = "chyba",
+  
+  # Status + Signalqualität
+  status = "stav",
+  signal_strength = "RSSI",
+  
+  # Reservierte Felder
+  reserve0 = "rezerva0",
+  reserve1 = "rezerva1",
+  reserve2 = "rezerva2",
+  reserve3 = "rezerva3",
+  
+  timestamp = "reading_time"
+ 
+)
+
 
 # Create rename maps list
 rename_maps <- list(
@@ -135,15 +182,20 @@ renamed_data <- lapply(names(raw_data), function(name) {
 
 names(renamed_data) <- names(raw_data)
 
+#'##################################### 
+#' REMOVE COLUMNS THAT ARE NOT NEEDED #
+#'##################################### 
 
-# remove columns we dont need
-# Define which columns to drop for each logger type
 drop_columns <- list(
-  meteo = c("battery_voltage", "battery_status", "battery_temperature", "error_code", "reserved0", "reserved1", "reserved2","timestamp", "Logger_ID", "signal_strength_rssi"),
+  meteo = c("battery_voltage", "battery_status", 
+            "battery_temperature", "error_code", "reserve0", 
+            "reserve1", "reserve2", "signal_strength_rssi"),
   teplota_vzduch = c( "battery_voltage" ,  "solar_panel_voltage", "battery_status", "sensor_error",
-              "signal_strength_rssi", "reserved0", "reserved1", "reserved2", "Logger_ID"),
+              "signal_strength_rssi", "reserve0", "reserve1", "reserve2"),
   teploty_vlhkosti_vZemi = c("battery_voltage", "solar_panel_voltage", "battery_current", "battery_energy",
-           "battery_temperature", "reserved0", "reserved1", "reserved2", "Logger_ID")
+           "battery_temperature", "reserve0", "reserve1", "reserve2"),
+  travnik = c( "battery_voltage", "solar_panel_voltage","battery_current", "error_code" ,"status" ,
+               "signal_strength", "reserve0", "reserve1", "reserve2", "reserve3"  )
 )
 
 # Remove ".csv" from names if necessary
@@ -164,7 +216,10 @@ cleaned_data <- lapply(names(renamed_data), function(name) {
 })
 names(cleaned_data) <- sub("\\.csv$", "", names(renamed_data))
 
-# convert all characters to numbers
+#'################################################
+#' Make sure all columns have the right format
+#'################################################
+
 library(dplyr)
 
 # Define columns you want to convert
@@ -175,13 +230,17 @@ meteo <- c(
   "precipitation_day"
 )
 
+travnik <- c(
+  "id", "temperature", "humidity", "nitrogen", "phosphorus",
+  "potassium",  "soil_conductivity",  "pH",  "salinity",  "TDS"                                                            
+)
+
 
 cleaned_data$meteo <- cleaned_data$meteo %>%
   mutate(across(all_of(meteo), ~ as.numeric(gsub(",", ".", .))))
 
-
-# 
-
+cleaned_data$travnik <- cleaned_data$travnik %>%
+  mutate(across(all_of(travnik), ~ as.numeric(gsub(",", ".", .))))
 
 
 # Define output folder
