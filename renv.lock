@@ -62,37 +62,6 @@
       "Package": "FieldAnalyzeR",
       "Version": "0.0.0.9000",
       "Source": "GitHub",
-      "Title": "FieldAnalyzeR analyzes field temperature data",
-      "Authors@R": "person(\"Elena\", \"Scholz\", , \"elenascholz@hotmail.de\", role = c(\"aut\", \"cre\"), comment = c(ORCID = \"YOUR-ORCID-ID\"))",
-      "Description": "The package analyzes field temperature data and utilizies reference data from AppEEARS. It provides functions for the data transformations and the download of the reference datasets.",
-      "License": "MIT + file LICENSE",
-      "Encoding": "UTF-8",
-      "Roxygen": "list(markdown = TRUE)",
-      "RoxygenNote": "7.3.1",
-      "Imports": [
-        "dplyr",
-        "ggplot2",
-        "httr",
-        "jsonlite",
-        "lubridate",
-        "magrittr",
-        "readxl",
-        "rlang",
-        "sf",
-        "tibble",
-        "tools",
-        "utils"
-      ],
-      "Depends": [
-        "R (>= 2.10)"
-      ],
-      "LazyData": "true",
-      "Suggests": [
-        "testthat (>= 3.0.0)"
-      ],
-      "Config/testthat/edition": "3",
-      "Author": "Elena Scholz [aut, cre] (ORCID: YOUR-ORCID-ID)",
-      "Maintainer": "Elena Scholz <elenascholz@hotmail.de>",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "ElenaScholz",
